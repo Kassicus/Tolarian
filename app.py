@@ -16,6 +16,16 @@ try:
     # Import from app package (directory named 'app')
     import app as app_package
 
+    # Debug: Check what's in the app_package
+    if not hasattr(app_package, 'create_app'):
+        # Try to get more info about what went wrong
+        available_attrs = dir(app_package)
+        raise ImportError(
+            f"app package imported but create_app not found. "
+            f"Available attributes: {', '.join(available_attrs[:20])}. "
+            f"Package file: {app_package.__file__ if hasattr(app_package, '__file__') else 'unknown'}"
+        )
+
     # Get the create_app function from the package
     create_app_func = app_package.create_app
 
