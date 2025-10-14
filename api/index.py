@@ -6,20 +6,20 @@ This file is the handler for all HTTP requests to the Flask application.
 import os
 import sys
 from pathlib import Path
+import importlib.util
 
-# Add parent directory to path to import app module
-parent_dir = str(Path(__file__).parent.parent)
-if parent_dir not in sys.path:
-    sys.path.insert(0, parent_dir)
-
-# Remove current directory from path to avoid importing this file as 'app'
-current_dir = str(Path(__file__).parent)
-if current_dir in sys.path:
-    sys.path.remove(current_dir)
+# Get the path to the app package directory
+app_dir = Path(__file__).parent.parent / 'app'
+app_init_file = app_dir / '__init__.py'
 
 try:
-    # Import from the app package (directory), not this file
-    from app import create_app
+    # Load the app module directly from the file path
+    spec = importlib.util.spec_from_file_location("app_module", app_init_file)
+    app_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(app_module)
+
+    # Get create_app function from the loaded module
+    create_app = app_module.create_app
 
     # Create Flask application instance
     # Vercel will set VERCEL_ENV which we use to determine config
