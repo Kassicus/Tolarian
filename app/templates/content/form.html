@@ -41,10 +41,19 @@
         padding: 0.5rem;
         overflow-x: auto;
     }
-    .preview-pane code {
+    /* Inline code styling */
+    .preview-pane :not(pre) > code {
         background-color: #fff;
         padding: 0.125rem 0.25rem;
         color: #d63384;
+    }
+    /* Code blocks - let highlight.js handle colors */
+    .preview-pane pre code {
+        background-color: transparent;
+        padding: 0;
+        color: inherit;
+        display: block;
+        font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
     }
     .preview-pane blockquote {
         border-left: 3px solid #0d6efd;
@@ -290,6 +299,31 @@ function updatePreview() {
 
     if (markdown) {
         preview.innerHTML = marked.parse(markdown);
+
+        // Apply syntax highlighting to code blocks
+        if (typeof hljs !== 'undefined') {
+            preview.querySelectorAll('pre code').forEach((block) => {
+                // Normalize language classes
+                if (block.className) {
+                    const langMap = {
+                        'language-python3': 'language-python',
+                        'language-py': 'language-python',
+                        'language-js': 'language-javascript',
+                        'language-sh': 'language-bash',
+                        'language-shell': 'language-bash',
+                        'language-yml': 'language-yaml',
+                        'language-c#': 'language-csharp',
+                        'language-cs': 'language-csharp'
+                    };
+
+                    let classes = block.className.split(' ');
+                    classes = classes.map(cls => langMap[cls] || cls);
+                    block.className = classes.join(' ');
+                }
+
+                hljs.highlightElement(block);
+            });
+        }
     } else {
         preview.innerHTML = '<span class="text-muted">Preview will appear here...</span>';
     }

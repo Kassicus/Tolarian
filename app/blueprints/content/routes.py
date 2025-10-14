@@ -4,7 +4,7 @@ from flask_login import login_required, current_user
 from datetime import datetime
 import uuid
 from . import content_bp
-from app.forms.content import ContentForm, CategoryForm, TagForm
+from app.forms.content import ContentForm, CategoryForm, TagForm, SlugField
 from app.utils.supabase import get_supabase_admin_client
 from app.models.user import UserRole
 
@@ -149,7 +149,7 @@ def create():
             content_data = {
                 'id': str(uuid.uuid4()),
                 'title': form.title.data,
-                'slug': form.slug.data or ContentForm.SlugField.slugify(form.title.data),
+                'slug': form.slug.data or SlugField.slugify(form.title.data),
                 'content_type': form.content_type.data,
                 'body': form.body.data if form.content_type.data != 'link' else None,
                 'content_metadata': {
@@ -167,33 +167,52 @@ def create():
                 content_data['published_at'] = datetime.utcnow().isoformat()
 
             # Insert content
-            result = client.table('content').insert(content_data).execute()
+            try:
+                result = client.table('content').insert(content_data).execute()
+            except Exception as insert_error:
+                # Check for duplicate slug error
+                if '23505' in str(insert_error) or 'duplicate key' in str(insert_error).lower():
+                    flash(f'A content item with the slug "{content_data["slug"]}" already exists. Please use a different title or slug.', 'danger')
+                    return render_template('content/form.html', form=form, title='Create Content')
+                else:
+                    raise insert_error
 
             if result.data:
                 # Handle tags
                 if form.tags.data:
-                    tags = [tag.strip() for tag in form.tags.data.split(',')]
+                    tags = [tag.strip() for tag in form.tags.data.split(',') if tag.strip()]
                     for tag_name in tags:
-                        # Check if tag exists
-                        tag_result = client.table('tags').select('id').eq('name', tag_name).execute()
+                        tag_slug = SlugField.slugify(tag_name)
+
+                        # Check if tag exists by slug (more reliable)
+                        tag_result = client.table('tags').select('id').eq('slug', tag_slug).execute()
                         if tag_result.data:
                             tag_id = tag_result.data[0]['id']
                         else:
                             # Create new tag
-                            new_tag = {
-                                'id': str(uuid.uuid4()),
-                                'name': tag_name,
-                                'slug': ContentForm.SlugField.slugify(tag_name)
-                            }
-                            tag_insert = client.table('tags').insert(new_tag).execute()
-                            tag_id = tag_insert.data[0]['id'] if tag_insert.data else None
+                            try:
+                                new_tag = {
+                                    'id': str(uuid.uuid4()),
+                                    'name': tag_name,
+                                    'slug': tag_slug
+                                }
+                                tag_insert = client.table('tags').insert(new_tag).execute()
+                                tag_id = tag_insert.data[0]['id'] if tag_insert.data else None
+                            except Exception as tag_error:
+                                # Tag might have been created by another request, try to fetch again
+                                tag_result = client.table('tags').select('id').eq('slug', tag_slug).execute()
+                                tag_id = tag_result.data[0]['id'] if tag_result.data else None
 
                         # Link tag to content
                         if tag_id:
-                            client.table('content_tags').insert({
-                                'content_id': content_data['id'],
-                                'tag_id': tag_id
-                            }).execute()
+                            try:
+                                client.table('content_tags').insert({
+                                    'content_id': content_data['id'],
+                                    'tag_id': tag_id
+                                }).execute()
+                            except Exception:
+                                # Link might already exist, ignore
+                                pass
 
                 flash('Content created successfully!', 'success')
                 return redirect(url_for('content.view', content_id=content_data['id']))

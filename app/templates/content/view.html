@@ -20,22 +20,32 @@
     .content-body h2 { margin-top: 1.5rem; margin-bottom: 0.75rem; }
     .content-body h3 { margin-top: 1.25rem; margin-bottom: 0.5rem; }
     .content-body pre {
-        background-color: #f8f9fa;
+        background-color: #f6f8fa;
         border: 1px solid #dee2e6;
-        border-radius: 0.25rem;
+        border-radius: 0.375rem;
         padding: 1rem;
         overflow-x: auto;
+        position: relative;
     }
-    .content-body code {
-        background-color: #f8f9fa;
-        padding: 0.125rem 0.25rem;
-        border-radius: 0.125rem;
+    /* Inline code styling - only applies to code NOT inside pre */
+    .content-body :not(pre) > code {
+        background-color: #f6f8fa;
+        padding: 0.125rem 0.375rem;
+        border-radius: 0.25rem;
         color: #d63384;
+        font-size: 0.9em;
+        font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
     }
+    /* Code blocks - let highlight.js handle the colors */
     .content-body pre code {
         background-color: transparent;
         padding: 0;
         color: inherit;
+        display: block;
+        font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    }
+    .content-body pre code.hljs {
+        padding: 0;
     }
     .content-body blockquote {
         border-left: 4px solid #0d6efd;
@@ -240,9 +250,61 @@
 
 {% block extra_js %}
 <script>
-// Add syntax highlighting if Prism.js is available
-if (typeof Prism !== 'undefined') {
-    Prism.highlightAll();
-}
+// Apply syntax highlighting to all code blocks
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Highlight.js loaded:', typeof hljs !== 'undefined');
+
+    if (typeof hljs !== 'undefined') {
+        // Configure highlight.js
+        hljs.configure({
+            ignoreUnescapedHTML: true,
+            languages: ['python', 'javascript', 'bash', 'sql', 'json', 'yaml', 'xml', 'css', 'csharp']
+        });
+
+        // Highlight all code blocks
+        document.querySelectorAll('pre code').forEach((block) => {
+            console.log('Found code block with classes:', block.className);
+
+            // Normalize language classes (python3 -> python, c# -> csharp, etc.)
+            if (block.className) {
+                const classes = block.className.split(' ');
+
+                classes.forEach((cls, index) => {
+                    if (cls.startsWith('language-')) {
+                        let lang = cls.replace('language-', '');
+
+                        // Normalize common variations
+                        const langMap = {
+                            'python3': 'python',
+                            'py': 'python',
+                            'js': 'javascript',
+                            'ts': 'javascript',
+                            'sh': 'bash',
+                            'shell': 'bash',
+                            'yml': 'yaml',
+                            'c#': 'csharp',
+                            'cs': 'csharp'
+                        };
+
+                        if (langMap[lang.toLowerCase()]) {
+                            classes[index] = 'language-' + langMap[lang.toLowerCase()];
+                        }
+                    }
+                });
+
+                block.className = classes.join(' ');
+            }
+
+            try {
+                hljs.highlightElement(block);
+                console.log('Highlighted block successfully');
+            } catch (e) {
+                console.error('Error highlighting block:', e);
+            }
+        });
+    } else {
+        console.error('Highlight.js not loaded!');
+    }
+});
 </script>
 {% endblock %}

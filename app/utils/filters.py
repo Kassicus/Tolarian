@@ -26,8 +26,11 @@ def markdown_filter(text: str, safe: bool = True) -> str:
 
     # Configure markdown extensions
     md = markdown.Markdown(extensions=[
-        'markdown.extensions.extra',  # Tables, footnotes, etc.
-        'markdown.extensions.codehilite',  # Code highlighting
+        'markdown.extensions.fenced_code',  # Fenced code blocks with language support
+        'markdown.extensions.tables',  # Tables
+        'markdown.extensions.footnotes',  # Footnotes
+        'markdown.extensions.abbr',  # Abbreviations
+        'markdown.extensions.def_list',  # Definition lists
         'markdown.extensions.toc',  # Table of contents
         'markdown.extensions.meta',  # Metadata
         'markdown.extensions.nl2br',  # Newline to break
@@ -35,6 +38,11 @@ def markdown_filter(text: str, safe: bool = True) -> str:
     ])
 
     html = md.convert(text)
+
+    # Debug: log if code blocks are present
+    if '<code class="language-' in html:
+        print(f"[DEBUG] Markdown filter: Found code blocks in output")
+        print(f"[DEBUG] HTML preview: {html[:200]}...")
 
     if safe:
         # Sanitize HTML to prevent XSS
