@@ -27,10 +27,15 @@ try:
         env = os.environ.get('FLASK_ENV', 'production')
         app = create_app_func(env)
 
-except Exception as e:
+except Exception as init_error:
     # Create a minimal Flask app that shows the error
     from flask import Flask
     import traceback
+
+    # Capture error details
+    error_type = type(init_error).__name__
+    error_message = str(init_error)
+    error_traceback = traceback.format_exc()
 
     app = Flask(__name__)
 
@@ -52,10 +57,10 @@ except Exception as e:
         <body>
             <div class="error">
                 <h1>⚠️ Application Failed to Initialize</h1>
-                <p><strong>Error Type:</strong> {type(e).__name__}</p>
-                <p><strong>Error Message:</strong> {str(e)}</p>
+                <p><strong>Error Type:</strong> {error_type}</p>
+                <p><strong>Error Message:</strong> {error_message}</p>
                 <h2>Full Traceback:</h2>
-                <pre>{traceback.format_exc()}</pre>
+                <pre>{error_traceback}</pre>
             </div>
         </body>
         </html>
