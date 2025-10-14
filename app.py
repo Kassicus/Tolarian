@@ -6,25 +6,21 @@ This file serves as the main entrypoint for Vercel deployments.
 import os
 import sys
 from pathlib import Path
+import importlib.util
 
-# Ensure the app package can be imported
-current_dir = Path(__file__).parent
-if str(current_dir) not in sys.path:
-    sys.path.insert(0, str(current_dir))
+# Get the path to the app package __init__.py
+app_package_dir = Path(__file__).parent / 'app'
+app_init_file = app_package_dir / '__init__.py'
 
 try:
-    # Import from app package (directory named 'app')
-    import app as app_package
+    # Load the app package directly from the directory to avoid circular import
+    spec = importlib.util.spec_from_file_location("app_package", app_init_file)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Could not load app package from {app_init_file}")
 
-    # Debug: Check what's in the app_package
-    if not hasattr(app_package, 'create_app'):
-        # Try to get more info about what went wrong
-        available_attrs = dir(app_package)
-        raise ImportError(
-            f"app package imported but create_app not found. "
-            f"Available attributes: {', '.join(available_attrs[:20])}. "
-            f"Package file: {app_package.__file__ if hasattr(app_package, '__file__') else 'unknown'}"
-        )
+    app_package = importlib.util.module_from_spec(spec)
+    sys.modules['app'] = app_package  # Register it as 'app' for submodules
+    spec.loader.exec_module(app_package)
 
     # Get the create_app function from the package
     create_app_func = app_package.create_app
