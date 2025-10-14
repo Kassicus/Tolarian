@@ -2,7 +2,10 @@
   "builds": [
     {
       "src": "api/index.py",
-      "use": "@vercel/python"
+      "use": "@vercel/python",
+      "config": {
+        "maxLambdaSize": "50mb"
+      }
     }
   ],
   "routes": [
@@ -18,23 +21,5 @@
   "env": {
     "FLASK_APP": "app",
     "FLASK_ENV": "production"
-  },
-  "functions": {
-    "api/index.py": {
-      "maxDuration": 10
-    },
-    "api/cron/*.py": {
-      "maxDuration": 60
-    }
-  },
-  "crons": [
-    {
-      "path": "/api/cron/reindex",
-      "schedule": "0 2 * * *"
-    },
-    {
-      "path": "/api/cron/cleanup",
-      "schedule": "0 3 * * 0"
-    }
-  ]
+  }
 }
