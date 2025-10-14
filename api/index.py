@@ -8,9 +8,17 @@ import sys
 from pathlib import Path
 
 # Add parent directory to path to import app module
-sys.path.insert(0, str(Path(__file__).parent.parent))
+parent_dir = str(Path(__file__).parent.parent)
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
+
+# Remove current directory from path to avoid importing this file as 'app'
+current_dir = str(Path(__file__).parent)
+if current_dir in sys.path:
+    sys.path.remove(current_dir)
 
 try:
+    # Import from the app package (directory), not this file
     from app import create_app
 
     # Create Flask application instance
