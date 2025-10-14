@@ -43,6 +43,7 @@ docs/
 scripts/
 debug_env.py
 run.py
+app.py
 
 # Project specific
 _planning/
