@@ -21,7 +21,17 @@ db_session = None
 
 def create_app(config_name=None):
     """Application factory pattern for Flask app creation."""
-    app = Flask(__name__)
+    import os
+    from pathlib import Path
+
+    # Get the absolute path to the app directory
+    app_dir = Path(__file__).parent
+    template_folder = app_dir / 'templates'
+    static_folder = app_dir / 'static'
+
+    app = Flask(__name__,
+                template_folder=str(template_folder),
+                static_folder=str(static_folder))
 
     # Load configuration
     from app.config import config_dict
