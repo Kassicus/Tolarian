@@ -184,14 +184,26 @@ def register_error_handlers(app):
 
     @app.errorhandler(500)
     def internal_error(error):
+        import traceback
         if db_session:
             db_session.rollback()
-        return jsonify({
-            'success': False,
-            'error': 'Internal Server Error',
-            'message': 'An unexpected error occurred',
-            'status_code': 500
-        }), 500
+
+        # Include more details in development/debug mode
+        if app.debug:
+            return jsonify({
+                'success': False,
+                'error': 'Internal Server Error',
+                'message': str(error),
+                'traceback': traceback.format_exc(),
+                'status_code': 500
+            }), 500
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Internal Server Error',
+                'message': 'An unexpected error occurred',
+                'status_code': 500
+            }), 500
 
 
 def register_template_filters(app):

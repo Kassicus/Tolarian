@@ -15,9 +15,14 @@ try:
 
     # Create Flask application instance
     if os.environ.get('VERCEL_ENV'):
-        app = create_app('vercel')
+        app = create_app('production')  # Use production config for Vercel
     else:
         app = create_app('production')
+
+    # Add a health check endpoint
+    @app.route('/api/health')
+    def health_check():
+        return {'status': 'healthy', 'environment': os.environ.get('VERCEL_ENV', 'unknown')}
 
 except Exception as e:
     # Fallback error handler
