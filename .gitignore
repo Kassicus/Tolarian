@@ -95,6 +95,24 @@ node_modules/
 package-lock.json
 yarn.lock
 
+# Next.js build outputs
+.next/
+frontend/.next/
+*.next
+out/
+frontend/out/
+
+# Next.js cache
+.next/cache/
+frontend/.next/cache/
+frontend/.next/static/
+frontend/.next/server/
+frontend/.next/trace/
+
+# Production builds
+build/
+dist/
+
 # Documentation builds
 docs/_build/
 site/

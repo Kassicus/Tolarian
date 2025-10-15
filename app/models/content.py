@@ -18,6 +18,12 @@ from . import Base
 
 class ContentType(enum.Enum):
     """Content type enumeration."""
+    document = 'document'
+    template = 'template'
+    guide = 'guide'
+    link = 'link'
+
+    # Support uppercase aliases for backward compatibility
     DOCUMENT = 'document'
     TEMPLATE = 'template'
     GUIDE = 'guide'
@@ -26,6 +32,11 @@ class ContentType(enum.Enum):
 
 class ContentStatus(enum.Enum):
     """Content status enumeration."""
+    draft = 'draft'
+    published = 'published'
+    archived = 'archived'
+
+    # Support uppercase aliases for backward compatibility
     DRAFT = 'draft'
     PUBLISHED = 'published'
     ARCHIVED = 'archived'

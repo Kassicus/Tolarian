@@ -7,6 +7,7 @@ from flask import Flask
 from flask_login import LoginManager
 from flask_migrate import Migrate
 from flask_caching import Cache
+from flask_cors import CORS
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 
@@ -14,6 +15,7 @@ from sqlalchemy.orm import sessionmaker, scoped_session
 login_manager = LoginManager()
 migrate = Migrate()
 cache = Cache()
+cors = CORS()
 
 # Database session management
 db_session = None
@@ -105,6 +107,16 @@ def create_app(config_name=None):
         'CACHE_DEFAULT_TIMEOUT': app.config.get('CACHE_DEFAULT_TIMEOUT', 300)
     })
 
+    # Initialize CORS with configuration
+    cors.init_app(app, resources={
+        r"/api/*": {
+            "origins": app.config.get('CORS_ORIGINS', ["http://localhost:3000"]),
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization"],
+            "supports_credentials": True
+        }
+    })
+
     # Register blueprints
     register_blueprints(app)
 
@@ -136,35 +148,50 @@ def register_blueprints(app):
     from app.blueprints.content import content_bp
     from app.blueprints.search import search_bp
     from app.blueprints.admin import admin_bp
-    from app.blueprints.api import api_bp
+    # Import our new API blueprint
+    from app.api import api_bp as api_v1_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(content_bp, url_prefix='/content')
     app.register_blueprint(search_bp, url_prefix='/search')
     app.register_blueprint(admin_bp, url_prefix='/admin')
-    app.register_blueprint(api_bp, url_prefix='/api/v1')
+    # Register our new API blueprint (already has /api/v1 prefix)
+    app.register_blueprint(api_v1_bp)
 
 
 def register_error_handlers(app):
     """Register error handlers for common HTTP errors."""
+    from flask import jsonify
 
     @app.errorhandler(404)
     def not_found_error(error):
-        from flask import render_template
-        return render_template('errors/404.html'), 404
+        return jsonify({
+            'success': False,
+            'error': 'Not Found',
+            'message': 'The requested resource was not found',
+            'status_code': 404
+        }), 404
 
     @app.errorhandler(403)
     def forbidden_error(error):
-        from flask import render_template
-        return render_template('errors/403.html'), 403
+        return jsonify({
+            'success': False,
+            'error': 'Forbidden',
+            'message': 'You do not have permission to access this resource',
+            'status_code': 403
+        }), 403
 
     @app.errorhandler(500)
     def internal_error(error):
-        from flask import render_template
         if db_session:
             db_session.rollback()
-        return render_template('errors/500.html'), 500
+        return jsonify({
+            'success': False,
+            'error': 'Internal Server Error',
+            'message': 'An unexpected error occurred',
+            'status_code': 500
+        }), 500
 
 
 def register_template_filters(app):

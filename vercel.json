@@ -1,6 +1,29 @@
 {
+  "buildCommand": "cd frontend && npm install && npm run build",
+  "outputDirectory": "frontend/.next",
+  "installCommand": "npm install --prefix frontend",
+  "framework": "nextjs",
+  "functions": {
+    "api/*.py": {
+      "runtime": "python3.9",
+      "includeFiles": "app/**",
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/v1/:path*",
+      "destination": "/api/vercel_app"
+    }
+  ],
   "env": {
     "FLASK_APP": "app",
-    "FLASK_ENV": "production"
+    "FLASK_ENV": "production",
+    "PYTHONPATH": "/var/task"
+  },
+  "build": {
+    "env": {
+      "NEXT_PUBLIC_API_URL": ""
+    }
   }
 }

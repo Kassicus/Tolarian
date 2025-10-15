@@ -1,0 +1,175 @@
+/* Global CSS Styles */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Fluent Design Enhancements */
+
+/* Acrylic effect for supported browsers */
+.acrylic {
+  backdrop-filter: blur(20px) saturate(125%);
+  background-color: rgba(255, 255, 255, 0.7);
+}
+
+html.dark .acrylic {
+  background-color: rgba(31, 31, 31, 0.7);
+}
+
+/* Reveal effect on hover */
+.reveal {
+  position: relative;
+  overflow: hidden;
+}
+
+.reveal::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s ease, height 0.6s ease;
+}
+
+html.dark .reveal::before {
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+}
+
+.reveal:hover::before {
+  width: 300%;
+  height: 300%;
+}
+
+/* Depth layers */
+.depth-0 {
+  box-shadow: none;
+}
+
+.depth-4 {
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.depth-8 {
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.08);
+}
+
+.depth-16 {
+  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.12);
+}
+
+.depth-64 {
+  box-shadow: 0px 32px 64px rgba(0, 0, 0, 0.2);
+}
+
+html.dark .depth-4 {
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+html.dark .depth-8 {
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.4);
+}
+
+html.dark .depth-16 {
+  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.5);
+}
+
+html.dark .depth-64 {
+  box-shadow: 0px 32px 64px rgba(0, 0, 0, 0.7);
+}
+
+/* Smooth transitions */
+* {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-duration: 200ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(128, 128, 128, 0.3);
+  border-radius: 6px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(128, 128, 128, 0.5);
+  background-clip: content-box;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: rgba(200, 200, 200, 0.3);
+  background-clip: content-box;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(200, 200, 200, 0.5);
+  background-clip: content-box;
+}
+
+/* Loading animation */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.loading {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Utility classes */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 16px;
+  }
+}
