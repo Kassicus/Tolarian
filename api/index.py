@@ -1,6 +1,5 @@
 """
 Vercel serverless function handler for Flask application.
-Uses WSGI adapter for Vercel Python runtime.
 """
 
 import os
@@ -10,61 +9,95 @@ from pathlib import Path
 # Add parent directory to path to import app module
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-try:
-    from app import create_app
+def handler(request):
+    """
+    Vercel serverless function handler.
+    This is the entry point for all API requests.
+    """
+    try:
+        # Import Flask app
+        from flask import Flask, jsonify
 
-    # Create Flask application instance
-    if os.environ.get('VERCEL_ENV'):
-        app = create_app('production')  # Use production config for Vercel
-    else:
-        app = create_app('production')
+        # Create a simple Flask app for testing
+        app = Flask(__name__)
 
-    # Add a health check endpoint
-    @app.route('/api/health')
-    def health_check():
-        return {'status': 'healthy', 'environment': os.environ.get('VERCEL_ENV', 'unknown')}
+        # Test route
+        @app.route('/api/test')
+        def test():
+            return jsonify({
+                'status': 'ok',
+                'message': 'Flask is working',
+                'env': os.environ.get('VERCEL_ENV', 'unknown')
+            })
 
-except Exception as e:
-    # Fallback error handler
-    from flask import Flask
-    import traceback
+        # Health check
+        @app.route('/api/health')
+        def health():
+            return jsonify({
+                'status': 'healthy',
+                'environment': os.environ.get('VERCEL_ENV', 'unknown')
+            })
 
-    app = Flask(__name__)
+        # Try to import the actual app
+        try:
+            from app import create_app
 
-    @app.route('/', defaults={'path': ''})
-    @app.route('/<path:path>')
-    def catch_all(path):
-        error_details = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Application Error</title>
-            <style>
-                body {{ font-family: monospace; padding: 20px; background: #f5f5f5; }}
-                .error {{ background: white; padding: 20px; border-radius: 5px; border: 2px solid #dc3545; }}
-                h1 {{ color: #dc3545; }}
-                pre {{ background: #f8f9fa; padding: 10px; overflow-x: auto; }}
-            </style>
-        </head>
-        <body>
-            <div class="error">
-                <h1>⚠️ Application Failed to Initialize</h1>
-                <p><strong>Error Type:</strong> {type(e).__name__}</p>
-                <p><strong>Error Message:</strong> {str(e)}</p>
-                <h2>Traceback:</h2>
-                <pre>{traceback.format_exc()}</pre>
-                <h2>Environment Check:</h2>
-                <ul>
-                    <li>VERCEL_ENV: {os.environ.get('VERCEL_ENV', 'Not Set')}</li>
-                    <li>PYTHONPATH: {os.environ.get('PYTHONPATH', 'Not Set')}</li>
-                    <li>DATABASE_URL: {'Set' if os.environ.get('DATABASE_URL') else 'Not Set'}</li>
-                    <li>SECRET_KEY: {'Set' if os.environ.get('SECRET_KEY') else 'Not Set'}</li>
-                </ul>
-            </div>
-        </body>
-        </html>
-        """
-        return error_details, 500
+            # Use the actual app if it loads
+            real_app = create_app('production')
 
-# Vercel expects the app to be exposed directly
-# The WSGI app will be handled by Vercel's Python runtime
+            # Copy routes from real app to our test app
+            for rule in real_app.url_map.iter_rules():
+                app.add_url_rule(
+                    rule.rule,
+                    endpoint=rule.endpoint,
+                    view_func=real_app.view_functions.get(rule.endpoint),
+                    methods=rule.methods
+                )
+
+        except Exception as e:
+            # If the real app fails, add an error endpoint
+            @app.route('/api/error')
+            def error():
+                return jsonify({
+                    'error': 'Failed to load main app',
+                    'message': str(e),
+                    'type': type(e).__name__
+                }), 500
+
+        # Create a test request context and process the request
+        with app.test_request_context(
+            path=request.path if hasattr(request, 'path') else '/api/health',
+            method=request.method if hasattr(request, 'method') else 'GET'
+        ):
+            try:
+                # Get the response from Flask
+                response = app.full_dispatch_request()
+
+                # Convert Flask response to Vercel format
+                return {
+                    'statusCode': response.status_code,
+                    'headers': dict(response.headers) if response.headers else {'Content-Type': 'application/json'},
+                    'body': response.get_data(as_text=True)
+                }
+
+            except Exception as e:
+                return {
+                    'statusCode': 500,
+                    'headers': {'Content-Type': 'application/json'},
+                    'body': {
+                        'error': 'Request processing failed',
+                        'message': str(e)
+                    }
+                }
+
+    except Exception as e:
+        # Last resort error handler
+        return {
+            'statusCode': 500,
+            'headers': {'Content-Type': 'application/json'},
+            'body': {
+                'error': 'Handler failed',
+                'message': str(e),
+                'type': type(e).__name__
+            }
+        }
